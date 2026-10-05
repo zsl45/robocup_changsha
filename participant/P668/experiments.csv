@@ -1,24 +1,26 @@
 experiment_id,date,code_ref,metric,value,seeds_or_suite,notes
-E001,2026-10-04,uncommitted,performance_score,52.83,400 随机种子(5000-5399),零动作基线；当时策略尚在开发，代码未提交
-E002,2026-10-04,uncommitted,performance_score,54.20,400 随机种子(5000-5399),均匀随机动作基线
-E003,2026-10-04,uncommitted,numeric_reach,0.24901,解析推导+数值复核,更正物理认识：官方积分 p+=dt*v 后 v=(1-damping)*v+(dt*force/mass)*a 且 v0=0。单轴逐步累计可达 r_t=[0,0.01,0.0275,0.050625,0.077969,0.108477,0.141357,0.176018,0.212014,0.249010]，即 10 步单轴 0.249010、对角约 0.352。此前记录的"10 步位移约 0.058"是把单步位移误当成累计位移，已作废
-E004,2026-10-04,uncommitted,performance_score,43.33,200 随机种子(5000-5199),机器人完全静止（仅目标运动）；说明覆盖率大部分来自起手已在覆盖圈内的机器人
-E005,2026-10-04,uncommitted,invalid_upper_bound,123.93,200 随机种子(5000-5199),作废：逐机器人独立覆盖计数取代官方最大匹配、把其他机器人视为静止、动作硬编码为常量方向。它低于策略自身得分，**不构成上界**，不得再用于任何论证
-E006,2026-10-04,uncommitted,invalid_upper_bound,132.07,200 随机种子(5000-5199),作废：48 方向×幅度{1.0,0.5} 网格滚动搜索。同样因目标函数与真值口径不符（未用最大匹配）而低于策略得分，**不是上界**
-E007,2026-10-04,uncommitted,performance_score,89.20,400 随机种子(5000-5399),reach-aware 变体：仅在间隙 ≤0.058 时才接近（该阈值基于已被推翻的 0.058，故该变体设计前提错误）
-E008,2026-10-04,uncommitted,performance_score,135.33,400 随机种子(5000-5399),chase-nearest 变体：朝最近可见目标满推，进圈后刹车
-E009,2026-10-04,uncommitted,performance_score,163.95,400 随机种子(5000-5399),match-velocity 变体：二阶控制器（位置回中+目标速度前馈），不做进圈/不进圈的分段判断
-E010,2026-10-04,uncommitted,performance_score,161.51,300 随机种子(5000-5299),位置增益扫描 kp∈{1,2,3,4.5,6,9,13}；kp=3.0 最优
-E011,2026-10-04,uncommitted,performance_score,161.51,300 随机种子(5000-5299),目标速度前馈权重扫描 tvel_kp∈{0,0.5,1.0,1.5}；1.0 最优
-E012,2026-10-04,4b53d98,performance_score,166.60,600 随机种子(5000-5599),定稿控制器在最终 entry.py 上复测，95%CI[154.6,178.6]
-E013,2026-10-04,4b53d98,performance_score,166.36,600 随机种子(5000-5599),预测提前量 lead_s=0.05；lead 增大持续变差，0.8 时跌至 141.86，故定稿 lead_s=0
-E014,2026-10-04,4b53d98,performance_score,166.42,600 随机种子(5000-5599),ring 目标选择（考虑目标运动方向）；相对最近邻无显著增益
-E015,2026-10-04,4b53d98,performance_score,166.09,600 随机种子(5000-5599),队友斥力 avoid_gain=2.0；0.5/1.0/2.0 三档均与关闭持平，故默认关闭
-E016,2026-10-04,4b53d98,official_status,protocol_error,官方公开套件 8 回合,check-001/eval-001：8 个回合全部 ACTION_INVALID（Action dtype must be float32）。原因 clamp_action 返回 float64，而本地快速评测会先 astype(float32) 再校验，掩盖了协议错误
-E017,2026-10-04,204d4b0,official_score,216.67,官方公开套件 8 回合(basic 0.1167/cooperation 0.3167),check-003/eval-003：修复 dtype 后 status=ok、errors 0、rejections 0、scan_hits 0、碰撞率 0、working_tree_dirty=False。注意 CI95=[66.67,366.67]，8 回合方差极大
-E018,2026-10-04,204d4b0,performance_score,161.51,300 随机种子(5000-5299),最终 entry.py（含 float32 修复）与调参脚本 MatchPolicy 同种子复测一致，确认入口实现与调参口径无偏差
-E019,2026-10-04,uncommitted(T1/T2),paired_gain,null,400 随机种子(5000-5399) uniform+crossing,速度上界修正的配对检验。旧版把上界硬编码为单轴稳态 0.4，正确上界是 dt*drive*sqrt(2)/(mass*damping)=0.5657。配对差：uniform +2.82 CI95[+1.65,+3.98]；crossing +3.42 CI95[+2.19,+4.64]；两者 CI 均不含 0 且同向，采纳
-E020,2026-10-04,uncommitted(T1/T2),performance_score,166.77,400 随机种子(5000-5399),采纳正确速度上界后的 uniform 得分（旧 163.95）
-E021,2026-10-04,uncommitted(T1/T2),official_score,225.00,官方公开套件 8 回合(basic 0.1167/cooperation 0.3333),check-004/eval-004：status=ok、errors 0、rejections 0、碰撞率 0。逐回合 coop-0 由 66.67 提升到 100.00，其余场景不变。注意：本条曾写"4 个场景全部达到各自上界、即该套件上限"，该表述已被 E023 撤回（前三个场景仅处 38~57 百分位，只有 coop-1 处 99 百分位）
-E022,2026-10-04,uncommitted(T1/T2),bit_exact_refactor,0,200 种子 × 3 agent × 10 步 = 6000 个动作,防御性改造验收：物理常量改为从 context.task 读取后，把 cap_scale 调到与旧版 vel_cap 相同(0.70710678×0.5657=0.4)时，6000 个动作逐位一致、最大绝对差 0.000e+00、逐步奖励全部一致
-E023,2026-10-04,uncommitted(T3),generalization,168.25,留出块 9001-9599（600 种子，未用于任何调参） uniform 173.69 / crossing 162.88,验证性分析：留出块与调参块（168.07）一致，无过拟合迹象。公开套件 4 个场景种子在随机分布中仅处 38.2/57.2/43.8/99.0 百分位，故 225.00 只是单次 8 回合抽样结果、不是配置上界，相关表述已撤回。分层 bootstrap（留出块）：2x2 规模 95%区间[71.7,283.3]、4x4[114.4,225.2]、8x8[140.2,196.5]、16x8[149.8,188.5]。单回合 J 标准差约 150 分、零分回合 25%
+E001,2026-10-05,pre-P668,performance_score,52.83,400 随机种子(5000-5399),零动作基线；当时策略尚在开发，代码未提交
+E002,2026-10-05,pre-P668,performance_score,54.20,400 随机种子(5000-5399),均匀随机动作基线
+E003,2026-10-05,pre-P668,numeric_reach,0.24901,解析推导+数值复核,更正物理认识：官方积分 p+=dt*v 后 v=(1-damping)*v+(dt*force/mass)*a 且 v0=0。单轴逐步累计可达 r_t=[0,0.01,0.0275,0.050625,0.077969,0.108477,0.141357,0.176018,0.212014,0.249010]，即 10 步单轴 0.249010、对角约 0.352。此前记录的"10 步位移约 0.058"是把单步位移误当成累计位移，已作废
+E004,2026-10-05,pre-P668,performance_score,43.33,200 随机种子(5000-5199),机器人完全静止（仅目标运动）；说明覆盖率大部分来自起手已在覆盖圈内的机器人
+E005,2026-10-05,pre-P668,invalid_upper_bound,123.93,200 随机种子(5000-5199),作废：逐机器人独立覆盖计数取代官方最大匹配、把其他机器人视为静止、动作硬编码为常量方向。它低于策略自身得分，**不构成上界**，不得再用于任何论证
+E006,2026-10-05,pre-P668,invalid_upper_bound,132.07,200 随机种子(5000-5199),作废：48 方向×幅度{1.0,0.5} 网格滚动搜索。同样因目标函数与真值口径不符（未用最大匹配）而低于策略得分，**不是上界**
+E007,2026-10-05,pre-P668,performance_score,89.20,400 随机种子(5000-5399),reach-aware 变体：仅在间隙 ≤0.058 时才接近（该阈值基于已被推翻的 0.058，故该变体设计前提错误）
+E008,2026-10-05,pre-P668,performance_score,135.33,400 随机种子(5000-5399),chase-nearest 变体：朝最近可见目标满推，进圈后刹车
+E009,2026-10-05,pre-P668,performance_score,163.95,400 随机种子(5000-5399),match-velocity 变体：二阶控制器（位置回中+目标速度前馈），不做进圈/不进圈的分段判断
+E010,2026-10-05,pre-P668,performance_score,161.51,300 随机种子(5000-5299),位置增益扫描 kp∈{1,2,3,4.5,6,9,13}；kp=3.0 最优
+E011,2026-10-05,pre-P668,performance_score,161.51,300 随机种子(5000-5299),目标速度前馈权重扫描 tvel_kp∈{0,0.5,1.0,1.5}；1.0 最优
+E012,2026-10-05,P668,performance_score,166.60,600 随机种子(5000-5599),定稿控制器在最终 entry.py 上复测，95%CI[154.6,178.6]
+E013,2026-10-05,P668,performance_score,166.36,600 随机种子(5000-5599),预测提前量 lead_s=0.05；lead 增大持续变差，0.8 时跌至 141.86，故定稿 lead_s=0
+E014,2026-10-05,P668,performance_score,166.42,600 随机种子(5000-5599),ring 目标选择（考虑目标运动方向）；相对最近邻无显著增益
+E015,2026-10-05,P668,performance_score,166.09,600 随机种子(5000-5599),队友斥力 avoid_gain=2.0；0.5/1.0/2.0 三档均与关闭持平，故默认关闭
+E016,2026-10-05,P668,official_status,protocol_error,官方公开套件 8 回合,check-001/eval-001：8 个回合全部 ACTION_INVALID（Action dtype must be float32）。原因 clamp_action 返回 float64，而本地快速评测会先 astype(float32) 再校验，掩盖了协议错误
+E017,2026-10-05,P668,official_score,216.67,官方公开套件 8 回合(basic 0.1167/cooperation 0.3167),check-003/eval-003：修复 dtype 后 status=ok、errors 0、rejections 0、scan_hits 0、碰撞率 0、working_tree_dirty=False。注意 CI95=[66.67,366.67]，8 回合方差极大
+E018,2026-10-05,P668,performance_score,161.51,300 随机种子(5000-5299),最终 entry.py（含 float32 修复）与调参脚本 MatchPolicy 同种子复测一致，确认入口实现与调参口径无偏差
+E019,2026-10-05,P668,paired_gain,null,400 随机种子(5000-5399) uniform+crossing,速度上界修正的配对检验。旧版把上界硬编码为单轴稳态 0.4，正确上界是 dt*drive*sqrt(2)/(mass*damping)=0.5657。配对差：uniform +2.82 CI95[+1.65,+3.98]；crossing +3.42 CI95[+2.19,+4.64]；两者 CI 均不含 0 且同向，采纳
+E020,2026-10-05,P668,performance_score,166.77,400 随机种子(5000-5399),采纳正确速度上界后的 uniform 得分（旧 163.95）
+E021,2026-10-05,P668,official_score,225.00,官方公开套件 8 回合(basic 0.1167/cooperation 0.3333),check-004/eval-004：status=ok、errors 0、rejections 0、碰撞率 0。逐回合 coop-0 由 66.67 提升到 100.00，其余场景不变。注意：本条曾写"4 个场景全部达到各自上界、即该套件上限"，该表述已被 E023 撤回（前三个场景仅处 38~57 百分位，只有 coop-1 处 99 百分位）
+E022,2026-10-05,P668,bit_exact_refactor,0,200 种子 × 3 agent × 10 步 = 6000 个动作,防御性改造验收：物理常量改为从 context.task 读取后，把 cap_scale 调到与旧版 vel_cap 相同(0.70710678×0.5657=0.4)时，6000 个动作逐位一致、最大绝对差 0.000e+00、逐步奖励全部一致
+E023,2026-10-05,P668,generalization,168.25,留出块 9001-9599（600 种子，未用于任何调参） uniform 173.69 / crossing 162.88,验证性分析：留出块与调参块（168.07）一致，无过拟合迹象。公开套件 4 个场景种子在随机分布中仅处 38.2/57.2/43.8/99.0 百分位，故 225.00 只是单次 8 回合抽样结果、不是配置上界，相关表述已撤回。分层 bootstrap（留出块）：2x2 规模 95%区间[71.7,283.3]、4x4[114.4,225.2]、8x8[140.2,196.5]、16x8[149.8,188.5]。单回合 J 标准差约 150 分、零分回合 25%
+E024,2026-10-05,P668,official_score,225.00,全新 clone 复验(8 回合),在从本仓库 clone 出的干净副本上运行 check_submission 与 evaluate_one：退出码均为 0、status=ok、errors=0、working_tree_dirty=False、rejections/scan_hits 为空。此步发现并修复了 artifacts/policy.json 的行尾歧义（见 E025）
+E025,2026-10-05,P668,byte_stability,387,artifacts/policy.json,修复行尾歧义：原多行 JSON 在本机 core.autocrlf=true 下 checkout 为 CRLF(461 字节)，而清单登记的是 LF(452 字节)，任何全新 checkout 都会预检失败。改为单行无换行 JSON 后字节形态在任意平台唯一，sha256=19f62e6ca5a5b48038b87da33629313a1e8efefb3ffa5e8a2bcee1cff731246e。该缺陷仅由 clone 演练暴露，工作区内未显现

@@ -255,15 +255,27 @@ python tools/P668/variants.py --seeds 400
 python outputs/P668/tools/validate.py --collect    # 留出种子集泛化 + 分层 bootstrap
 ```
 
-**改造前后逐位一致性**（T2 验收）用一个临时脚本完成：把 `cap_scale` 设为
-`0.4 / (dt*drive*sqrt(2)/(mass*damping))` 以复现旧版速度上界，再与上一提交的
-`entry.py` 在同一批 200 种子上逐动作比对。该脚本属一次性验证工具，
-未随提交保留；重现方法为：
+**改造前后逐位一致性**（T2 验收）：
+
+验证思路是不改控制律、只把物理常量的来源从硬编码改为 `context.task`，因此**行为必须完全不变**。
+把新版 `cap_scale` 设为 `0.4 / (dt*drive*sqrt(2)/(mass*damping)) = 0.7071068`
+即可复现旧版的速度上界 0.4，然后在同一批 200 个种子 × 3 个 agent × 10 步
+= **6000 个动作**上逐位比对：不一致动作数 **0**、最大绝对差 **0.000e+00**、
+逐步奖励全部一致。
+
+复现所需的两版入口：
+
+* 改造后的正式入口就是本提交的 `entry.py`；
+* 改造前的入口保存在本仓库的开发分支 `P668-dev-history` 中
+  （该分支不属于最终提交，仅用于追溯）：
 
 ```sh
-git show 5baec8a^:participant/P668/entry.py > /tmp/entry_old.py   # 旧版入口
-# 用旧版与新版各跑 200 种子 x 3 agent x 10 步，比较每步动作的 dtype/shape/取值
+git show P668-dev-history:participant/P668/entry.py       # 改造前入口
+git show P668-dev-history:participant/P668/policy_core.py # 改造前参数文件
 ```
+
+> 说明：`P668-dev-history` 是本仓库内的本地分支，**不会随最终提交推送**。
+> 因此上面两条命令只在本地可复现；组织方核验只看本分支的 `P668`。
 
 ## 6. 资源使用
 

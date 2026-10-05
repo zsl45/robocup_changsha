@@ -1,9 +1,1 @@
-{
-  "kp": 3.0,
-  "tvel_kp": 1.0,
-  "lead_s": 0.0,
-  "cap_scale": 1.0,
-  "avoid_gain": 0.0,
-  "avoid_radius": 0.12,
-  "note": "cap_scale 为物理速度上界的缩放系数（1.0 = 上界 dt*drive*sqrt(2)/(mass*damping) = 0.5657）。kp/tvel_kp/lead_s 由 tools/P668/sweep.py 在本地随机种子集 5000-5599 上扫描选定；cap_scale 由 400 种子配对检验确定（配对差 +2.82 [+1.65,+3.98] uniform、+3.42 [+2.19,+4.64] crossing）。"
-}
+{"kp":3.0,"tvel_kp":1.0,"lead_s":0.0,"cap_scale":1.0,"avoid_gain":0.0,"avoid_radius":0.12,"note":"cap_scale scales the physical velocity bound dt*drive*sqrt(2)/(mass*damping)=0.5657; 1.0 means the physical bound. kp/tvel_kp/lead_s chosen on local random seeds 5000-5599 via sweep.py; cap_scale chosen by 400-seed paired test (+2.82 [+1.65,+3.98] uniform, +3.42 [+2.19,+4.64] crossing)."}

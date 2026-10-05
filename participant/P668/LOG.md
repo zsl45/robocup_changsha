@@ -5,7 +5,7 @@
 
 ---
 
-## 2026-10-04 立项与物理摸底
+## 2026-10-05 立项与物理摸底
 
 **假设**：这是一个"追动态目标"的规划问题，难点在路径规划与多机分工。
 
@@ -37,7 +37,7 @@
 
 ---
 
-## 2026-10-04 控制器形态对照
+## 2026-10-05 控制器形态对照
 
 **假设**：覆盖判定每步重算、离开即失分，那么"贴住目标"比"尽快到达"更重要。
 
@@ -53,7 +53,7 @@
 
 ---
 
-## 2026-10-04 参数寻优
+## 2026-10-05 参数寻优
 
 **做法**：在固定种子集上扫描（`tools/P668/sweep.py`、`tools/P668/variants.py`）。
 
@@ -66,7 +66,7 @@
 
 ---
 
-## 2026-10-04 提交预检与首轮官方评测：定位 dtype 缺陷
+## 2026-10-05 提交预检与首轮官方评测：定位 dtype 缺陷
 
 **做法**：清空提交目录字节码缓存，运行官方 `scripts/check_submission.py` 与
 `scripts/evaluate_one.py`（公开套件 + 公开种子安排）。
@@ -81,12 +81,12 @@
 
 **修复**：`clamp_action` 出口统一转 `float32`；本地快速评测不再做宽容转换，
 直接按官方口径断言 dtype / 形状 / 有限性 / 范围。修复后 `check-003`/`eval-003`
-（提交 `204d4b0`）`status=ok`、`errors=0`、`rejections=0`、`scan_hits=0`、
+（本分支定稿提交）`status=ok`、`errors=0`、`rejections=0`、`scan_hits=0`、
 碰撞率 0、`working_tree_dirty=False`；`performance_score = 216.67`（E016/E017）。
 
 ---
 
-## 2026-10-04 速度上界修正（唯一被配对检验证实的提分项）
+## 2026-10-05 速度上界修正（唯一被配对检验证实的提分项）
 
 **假设**：旧版把速度上界硬编码为 `0.4`。但动作盒是 `[-1,1]^2`，力向量模上界是
 `drive_force*sqrt(2)`，故真实速度上界应为
@@ -117,7 +117,7 @@ v_max = dt * drive_force * sqrt(2) / (mass * damping) = 0.1*sqrt(2)/0.25 = 0.565
 
 ---
 
-## 2026-10-04 防御性改造（物理常量改从 context.task 读取）
+## 2026-10-05 防御性改造（物理常量改从 context.task 读取）
 
 **动机**：`policy_core.py` 原先硬编码 `DT/DAMPING/ACCEL_PER_ACTION/TARGET_SPEED_CAP`，
 一旦任务参数变化就会静默失效。改为在 `reset(context)` 时从协议公开的
@@ -140,7 +140,7 @@ E022。
 
 ---
 
-## 2026-10-04 验证性分析：撤回一处过度声称，建立真正的泛化估计
+## 2026-10-05 验证性分析：撤回一处过度声称，建立真正的泛化估计
 
 **动机（自查发现的问题）**：T1 之后我写下了两句**未经独立验证**的话——
 (1)"公开套件 4 个场景全部达到各自上界，即该套件理论满分"；
@@ -198,3 +198,37 @@ E023。
   我引用了它在公开套件上更低（221.67 对 225.00）。按方法论铁律"禁止用公开套件选参"，
   这一步不严谨。不过该决定同时有物理依据（`cap=0.5657` 是解析上界）与随机种子配对证据
   （两个候选 CI 重叠、差异不显著），并未改变结论；如实记录该瑕疵。
+
+---
+
+## 2026-10-05 提交形态整理与 clone 演练
+
+**做法**：把工作分支重建到真实的 upstream/master（44241a2）之上，只保留
+participant/P668/ 下的 10 个文件；随后从本仓库 **clone 出一份干净副本**，
+在副本里跑官方预检与评测——这最接近组织方拿到 Fork 后的实际状态。
+
+**结果**：clone 演练暴露了一个**工作区内不会显现**的真实缺陷。
+
+原 rtifacts/policy.json 是多行 JSON（LF，452 字节），但本机 core.autocrlf=true
+使任何一次全新 checkout 都把它变成 CRLF（461 字节）。而 submission.yaml 登记的是
+LF 形态的 sha256 与 size_bytes，于是 clone 后预检直接失败：
+
+`
+提交校验失败 [COVERAGE_ERROR]: 产物文件大小不匹配: artifacts/policy.json, 预期 452, 实际 461
+`
+
+即清单里存的是一个**任何 checkout 都不会产生的字节形态**。修复方式是把它写成
+**单行、无换行符**的 JSON，使行尾转换无从生效，字节形态在任意平台与任意
+utocrlf 设置下唯一。新摘要：size_bytes=387、
+sha256=19f62e6ca5a5b48038b87da33629313a1e8efefb3ffa5e8a2bcee1cff731246e。
+
+修复后 clone 复验：git status --porcelain --ignored 为空
+（即 working_tree_dirty=False）、check_submission 退出码 0、
+evaluate_one 退出码 0 且 status=ok、errors=0、performance_score=225.00。
+
+**关于 experiments.csv 的 code_ref 列**：本分支是在官方基线上重新提交的，
+早期开发用的提交哈希**不在本分支历史中**（本分支基于官方 upstream/master 重建），
+故 \code_ref\ 统一写成分支名 \P668\，更早的标 \pre-P668\。
+各条记录的 alue 是当时实测值，与最终提交的 rtifacts/policy.json 是一致的。
+
+E024/E025。
