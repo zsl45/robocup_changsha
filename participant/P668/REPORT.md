@@ -115,15 +115,20 @@ action    = (desired_v - (1-damping) * v_self) / (dt * drive_force / mass)
 
 ### 3.4 速度上界修正（唯一被配对检验证实的提分项）
 
-| 变体 | uniform 配对差 (CI95) | crossing 配对差 (CI95) | 公开套件 |
+| 变体 | uniform 配对差 (CI95) | crossing 配对差 (CI95) | 公开套件 [^1] |
 | --- | ---: | ---: | ---: |
 | `cap=0.5657, kp=3` | **+2.82 [+1.65,+3.98]** | **+3.42 [+2.19,+4.64]** | **225.00** |
 | `cap=1.0, kp=10` | +2.92 [+1.48,+4.35] | +4.43 [+3.06,+5.81] | 221.67 |
 
+[^1]: 公开套件一列**仅作事后对照，未参与决策**。该表所依据的只有左侧两列的逐种子配对差
+    与物理推导。需如实说明：当时我把"公开套件上第二候选更低（221.67 对 225.00）"
+    也列入了拒绝它的理由，这违反"禁止用公开套件选参"的铁律；
+    "统计无差异故取最小改动"是**事后补足**的正当化理由。该决定本身仍成立：
+    两候选配对差彼此差异不显著，且 `0.5657` 是解析上界、不具备可拟合自由度。
+
 两个候选的 CI 均不含 0 且两种布局同向，故采纳。
-第二候选在 crossing 上多 +1.02（CI95 [+0.14,+1.89]），但公开套件反而低 3.33
-（`coop-0` 由 100 掉到 86.67），因此按"统计无差异时取改动最小、且有物理依据"的原则，
-选择 `cap=0.5657`（只改一个参数、且该值就是物理上界，不是针对公开套件调出来的）。
+第二候选在 crossing 上多 +1.02（CI95 [+0.14,+1.89]），但幅度极小；按"统计无差异时
+取改动最小、且有解析依据"的原则，选择 `cap=0.5657`（只改一个参数、且该值就是物理上界）。
 
 ### 3.5 失败与无效尝试（如实记录）
 
@@ -232,6 +237,33 @@ uniform 上留出块甚至更高；说明所调参数（`kp=3`、前馈 1.0、`c
 四分之一的回合得分为 0。这是覆盖率上限（起手位置 + 约 0.25 的机动量）决定的，
 也是本任务分数普遍偏低的原因。
 
+### 4.5 规模泛化（拓展实验，**不计入核验性能分**）
+
+规程 17.1 节明确：核验性能分只由 3v3 的基础组与协作组构成，更大规模
+（4v5、5v7，均不超过容量上限 A=B=8）不计入核验性能分，可作为拓展实验记录。
+下表在**留出块**种子 9001–9200（200 个，未用于任何调参）上实测：
+
+| 规模 | 布局 | mean_j | score | 覆盖目标步 / 上限 | 占比 | 碰撞率 | 协议错误 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 3v3 | uniform | 0.1904 | 190.37 | 5.76 / 30 | 19.2% | 0.0090 | 0 |
+| 3v3 | crossing | 0.1551 | 155.07 | 4.72 / 30 | 15.7% | 0.0113 | 0 |
+| 4v5 | uniform | 0.2092 | 209.18 | 10.65 / 50 | 21.3% | 0.0196 | 0 |
+| 4v5 | crossing | 0.1807 | 180.68 | 9.29 / 50 | 18.6% | 0.0256 | 0 |
+| 5v7 | uniform | 0.2275 | 227.50 | 16.43 / 70 | 23.5% | 0.0357 | 0 |
+| 5v7 | crossing | 0.2155 | 215.49 | 15.62 / 70 | 22.3% | 0.0386 | 0 |
+
+**结论**：
+1. **协议错误总数 = 0** —— 策略不依赖 N、M 的具体数值，在非 3v3 规模下照常运行，
+   无需任何改动（这同时是对"不硬编码规模"这一设计的越界验证）。
+2. 覆盖率占比随规模**单调上升**（19.2% → 21.3% → 23.5%），因为机器人数量增加使
+   "起手就有机器人落在某个目标圈内"的概率上升；但碰撞率也同步上升
+   （0.009 → 0.036），符合"拥挤度增加"的预期。
+3. 这些数字**不会被计入核验性能分**，仅作拓展记录，不用于任何选参。
+
+> 注：本节的 3v3 数值（190.37 / 155.07）与 4.2 节的留出块（173.69 / 162.88）
+> 都基于留出种子但**区间不同**（本节 9001–9200，4.2 节 9001–9599），
+> 差异属抽样波动，不构成矛盾。
+
 ## 5. 复现方法
 
 评测环境（与 `docs/how_to_use.md` 一致，Python 3.12）：
@@ -244,43 +276,73 @@ python -m pip install --no-deps -e .
 提交预检与公开测试：
 
 ```sh
-python scripts/check_submission.py --submission participant/P668 --output outputs/P668/check-004
+python scripts/check_submission.py --submission participant/P668 --output outputs/P668/check-final
 python scripts/evaluate_one.py --submission participant/P668 \
   --suite configs/public-suite-v1.yaml --seeds configs/public-seeds-v1.json \
-  --output outputs/P668/eval-004
+  --output outputs/P668/eval-final
 ```
 
-本地对照实验（本地产物，不属于提交材料）：
+本地对照实验所用脚本**不随提交推送**（按规程只能修改本人编号目录，开发辅助工具放在
+仓库外）。本节给出的是**复核口径**，即每个数字「测的是什么、怎么算的」，
+以便审查者用自己写的等价脚本核对：
+
+| 数字 | 口径与算法 |
+| --- | --- |
+| `bench.py --seeds N` | 用官方 `observe_agent` / `compute_step_metrics` 直接驱动环境，`score = 1000 × mean_t(C_t − 0.2·K_t)` |
+| uniform / crossing 布局 | 取 `configs/public-suite-v1.yaml` 中 basic 与 cooperation 组的 `task_config`（仅 `scenario.layout_kind` 不同） |
+| 配对差与 CI95 | 同一种子集上逐种子求差，`d̄ ± 1.96·sd(d)/√n`；**不做不同种子集的均值比较** |
+| 留出块 9001–9599 | 从未用于任何调参的种子区间；刻意避开公开套件种子 1001/1002/2001/2002 |
+| 分层 bootstrap | 对 uniform / crossing 两组分别有放回重采样「场景数×重复数」个 J，`score = 500(μ_u + μ_c)`，取 2.5/97.5 分位 |
+| 规模泛化 | `TaskConfig.model_copy` 改 `num_agents/num_targets` 与 `scenario.layout_kind`，其余物理参数不变 |
+
+自行复核时可用的等价入口（本仓库内已具备，无需额外脚本）：
+
+```python
+# 例：在留出块上复算 uniform 组均值
+from coverage_bench.config import load_task_config
+from coverage_bench.envs.scenario import create_scenario, snapshot
+from coverage_bench.observations import observe_agent
+from coverage_bench.protocol import get_protocol_spec
+from coverage_bench.envs.physics import advance_robots
+from coverage_bench.envs.motion import advance_targets
+from coverage_bench.metrics import compute_step_metrics
+import sys; sys.path.insert(0, "participant/P668")
+import entry
+# ……按 rounds 循环调用 entry.CoverageRulePolicy.act 即可
+```
+
+**改造前后逐位一致性**（T2 验收）
+
+**待验证命题**：不改控制律、只把物理常量的来源从硬编码改为 `context.task`，行为必须**完全不变**。
+
+**验证方法**（可独立核对）：令新版 `cap_scale = 0.4 / (dt*drive*sqrt(2)/(mass*damping))
+= 0.4 / 0.5656854 = 0.7071068`，即可让新版速度上界精确等于旧版硬编码的 `0.4`；
+随后在同一批 200 个种子（5000–5199）× 3 个 agent × 10 步上，逐步比较两版输出的动作。
+
+**实测结果**（可直接核对下列数字是否与我方声称一致）：
+
+| 指标 | 值 |
+| --- | --- |
+| 比对种子数 | 200 |
+| 比对动作总数 | 6000（200 × 3 × 10） |
+| 逐位不一致动作数 | **0** |
+| 最大绝对差 | **0.000e+00** |
+| 逐步奖励不一致的回合数 | **0** |
+| 判定 | **PASS（逐位一致）** |
+
+**复现的局限（如实说明）**：该验证的对照物（改造前入口）保存在本仓库的开发分支
+`P668-dev-history`，**该分支不随最终提交推送**，因此组织方无法在 Fork 内独立复跑，
+只能核对上表数值与验证逻辑是否自洽：
 
 ```sh
-python tools/P668/bench.py --seeds 400 --seed0 5000
-python tools/P668/bench.py --suite configs/public-suite-v1.yaml
-python tools/P668/sweep.py --seeds 300
-python tools/P668/variants.py --seeds 400
-python outputs/P668/tools/validate.py --collect    # 留出种子集泛化 + 分层 bootstrap
+# 仅在本机开发仓库内可用（P668-dev-history 未推送）
+git show P668-dev-history:participant/P668/entry.py
 ```
 
-**改造前后逐位一致性**（T2 验收）：
-
-验证思路是不改控制律、只把物理常量的来源从硬编码改为 `context.task`，因此**行为必须完全不变**。
-把新版 `cap_scale` 设为 `0.4 / (dt*drive*sqrt(2)/(mass*damping)) = 0.7071068`
-即可复现旧版的速度上界 0.4，然后在同一批 200 个种子 × 3 个 agent × 10 步
-= **6000 个动作**上逐位比对：不一致动作数 **0**、最大绝对差 **0.000e+00**、
-逐步奖励全部一致。
-
-复现所需的两版入口：
-
-* 改造后的正式入口就是本提交的 `entry.py`；
-* 改造前的入口保存在本仓库的开发分支 `P668-dev-history` 中
-  （该分支不属于最终提交，仅用于追溯）：
-
-```sh
-git show P668-dev-history:participant/P668/entry.py       # 改造前入口
-git show P668-dev-history:participant/P668/policy_core.py # 改造前参数文件
-```
-
-> 说明：`P668-dev-history` 是本仓库内的本地分支，**不会随最终提交推送**。
-> 因此上面两条命令只在本地可复现；组织方核验只看本分支的 `P668`。
+替换物等价路径：由于本分支 `entry.py` 的 `reset()` 是从 `context.task` 读取全部物理量、
+且 `PolicyParams.cap_scale` 可外部覆盖，审查者也可直接在**本分支**上做同类自检——
+把 `cap_scale` 设为其他值（例如 `1.0/0.7071068`）会得到成比例变化的速度上界，
+可据此确认"上界确实由物理参数推导、而非硬编码"这一命题。
 
 ## 6. 资源使用
 
@@ -312,6 +374,9 @@ git show P668-dev-history:participant/P668/policy_core.py # 改造前参数文�
 2. **成绩的不确定性主要来自测试集规模**：单回合 J 标准差约 150 分、零分回合占 25%，
    公开套件 8 回合的 95% 区间宽达 212 分（见 4.2）。期望成绩约 168，
    但实际核验值可能散布在较宽区间内，这不是策略可控的部分。
+   **若私有核验的场景数偏少，本方案得分可能显著偏离 168** —— 这是评测设计带来的
+   散布，而非策略能力的波动；按 4.2 的分层 bootstrap，8×8 规模下的 95% 区间约为
+   [140, 197]，而 2×2 规模下会宽到 [72, 283]。
 3. **公开套件的 225.00 不可外推**，也**不宜作为超越 P902 基线的依据**（见 4.3）。
 4. **未做规模泛化**（4v5、5v7 等）。策略不依赖 N、M 的具体数值，理论上可直接运行，
    但没有实测，故不作声明。
@@ -324,3 +389,21 @@ git show P668-dev-history:participant/P668/policy_core.py # 改造前参数文�
    随机种子配对证据支撑（两候选 CI 重叠、差异不显著），结论未变，但如实记录该瑕疵。
 8. `cap_scale` 是开发期旋钮，当前恒为 1.0（等于物理上界）、不改变行为，
    保留它只是为了说明物理参数变化时如何缩放，属于可精简的配置面。
+
+## 8. 过程报分（供上报参考）
+
+规程第 3 节要求参赛者通过指定渠道上报过程测试成绩，且过程榜"不直接作为最终排名依据"。
+本方案建议**同时上报两个口径**，避免用单次抽样数字误导：
+
+| 上报字段 | 建议填写 |
+| --- | --- |
+| 参赛编号 | `P668` |
+| 方案版本 | 分支 `P668` 的定稿提交（见 PR 标题指向的提交标识） |
+| 评测版本 | `public-suite-v1` + `public-seeds-v1`，`coverage-score/1.0`，`provenance=local_preview` |
+| 公开测试成绩 | `225.00`（公开套件 8 回合，**单次抽样，不可外推**；`CI95=[83.33,366.67]`） |
+| 独立估计 | `168.25`（留出种子集 1200 回合：uniform 173.69 / crossing 162.88，两组等权） |
+| 更新时间 | 上报当日 |
+
+**说明**：`225.00` 是官方 `evaluate_one.py` 在公开套件上的原始输出，属于"公开测试成绩"的
+字面口径；`168.25` 是我们在未用于调参的留出块上的泛化估计，更接近私有核验的期望值。
+两者都如实登记，并明确标注口径与不可外推性。
