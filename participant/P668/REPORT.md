@@ -141,8 +141,13 @@ action    = (desired_v - (1-damping) * v_self) / (dt * drive_force / mass)
 
 ## 4. 结果
 
-### 4.1 官方公开套件（本地，`scripts/evaluate_one.py`）
+> **先读这一句**：本方案的能力估计是**约 168 分**（见 4.2 留出种子集泛化）。
+> 4.1 里出现的 **225.00** 是公开套件 8 回合的**单次**成绩，方差极大、
+> **不可外推**，也不是任何意义上的"满分"或"上界"。规程的核验性能分理论上界是 1000 分。
 
+### 4.1 公开套件复跑（过程自测，仅供参考）
+
+以下为官方 `scripts/evaluate_one.py` 在**公开套件**上的实际输出：
 ```
 status            : ok
 provenance        : local_preview          （Windows 无 SIGALRM，不启用阶段超时）
